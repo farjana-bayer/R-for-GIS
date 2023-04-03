@@ -11,28 +11,6 @@ library(sf)
 
 library(geosphere)
 
-##read nc files####
-setwd("~/Documents/Code example/spatial analysis")
-
-##identify the varname in nc files
-nc = ncdf4::nc_open("permanent_gridmetPDSI_20180101.nc")
-variables = names(nc[['var']])
-variables
-
-##read list of nc files together
-
-file.names<- list.files(pattern = "*\\.nc")
-for(i in 1:length(file.names)){
-  data<- file.names[i]
-  ras<- raster(data, varnames  = "palmer_drought_severity_index")
-  ##if want to reclassify
-  ras1<- round(ras,1)
-  ras1<- reclassify(ras1,c(-20,-5,4,-4.9,-4,3,-3.9,-3,2,-2.9,-2,1,-1.9,-1,0,-0.9,20,NA)) ##if value between (-20:-5) assign value 4
-  ras1[!(ras1 == 2)]<- NA
-  ##write raster as tif
-  writeRaster(ras,filename = data,format = "GTiff",overwrite = TRUE)
-  writeRaster(ras1,filename = paste0("D2",data),format = "GTiff",overwrite = TRUE)
-}
 
 ##crs####
 
@@ -56,33 +34,6 @@ proj4string(pointCoordinates_19) <- CRS("+init=epsg:4326") ##epsg for WGS84
 ##change state crs from NAD83 to WGS84
 state <- st_transform(state, crs = 4326)
 
-##raster projection
-setwd("~/Documents/Code example/spatial analysis")
-ras<- raster("permanent_gridmetPDSI_20180101.tif")
-ras<- projectRaster(ras,crs = "+init=epsg:4326")
-st_crs(ras)
-
-##raster####
-#create raster stack to reduce the file size
-setwd("~/Documents/Code example/spatial analysis")
-rast <- list.files(pattern = "^per.*\\.tif")
-ras_stack = stack(rast)
-
-#save raster stack and associated layer name
-writeRaster(ras_stack,"raster_stack.tif", overwrite = TRUE)
-#save raster layer name separately
-ras_n<- substr(rast,23,30)
-saveRDS(ras_n,file = "raster_stack_name.RData")
-
-#read raster stack
-t<- stack("raster_stack.tif")
-nam<- readRDS("raster_stack_name.Rdata")
-names(t)<- nam
-
-##check
-ch<- subset(t,subset = 1:2)
-plot(ch)
-rm(nam,ras_n,rast,ras_stack)
 
 
 #crop raster
