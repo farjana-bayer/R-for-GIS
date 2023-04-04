@@ -19,44 +19,11 @@ nc<- st_read("nc.shp")##
 class(nc) ##check class
 st_geometry(nc[1,])[[1]][[1]]##check the geometry/points
 plot(st_geometry(nc[1,]))##plot geometry
-nc1<- nc%>%dplyr::select("geometry") ##can use dpluy
+nc1<- nc%>%dplyr::select("geometry") ##can use dplyr
 
 ##write a shapefile####
 saveRDS(nc, "nc_county.rds")
 nc <- readRDS("nc_county.rds")
-
-##create some simple feature geometry####
-##point
-a_point<- st_point(c(2,1))
-class(a_point)
-##linestring
-s1<- rbind(c(2,3),c(3,4),c(3,5),c(1,5))
-a_linestring<- st_linestring(s1)
-plot(a_linestring)
-
-#polygon
-p1 <- rbind(c(0, 0), c(3, 0), c(3, 2), c(2, 5), c(1, 3), c(0, 0))
-a_polygon <- st_polygon(list(p1))
-plot(a_polygon)
-##polygon with hole
-p2 <- rbind(c(1, 1), c(1, 2), c(2, 2), c(1, 1))
-a_plygon_with_a_hole <- st_polygon(list(p1, p2))
-plot(a_plygon_with_a_hole)
-##mutipolygon
-p3 <- rbind(c(4, 0), c(5, 0), c(5, 3), c(4, 2), c(4, 0))
-a_multipolygon <- st_multipolygon(list(list(p1, p2), list(p3)))
-plot(a_multipolygon)
-
-
-#create an simple feature geometry list-column(sfc)
-sfc_ex <- st_sfc(list(a_point, a_linestring, a_polygon, a_multipolygon))
-#create a simple feature
-df_ex <- data.frame(name = c("A", "B", "C", "D"))
-df_ex$geometry <- sfc_ex ## add geometry column
-sf_ex <- st_as_sf(df_ex)##set st as sf
-class(sf_ex)
-
-
 
 ###Coordinate reference system (CRS)####
 st_crs(nc)
@@ -68,6 +35,7 @@ st_crs(nc)
 nc_wgs84<- st_transform(nc,4326)##transform CRS from nad27 to WGS84 with EPSG number
 nc_new <- st_transform(nc_wgs84, st_crs(nc)) ##transform CRS without EPSG number
 st_crs(nc_new)
+st_crs(nc_wgs84)
 
 ##turn data frame to sf objects####
 (
@@ -88,46 +56,6 @@ class(wells_sp)
 ##turn sf to data frame
 wells_no_longer_sf <- st_drop_geometry(wells_sf)
 
-##create buffer around points
-#--- read wells location data ---#
-urnrd_wells_sf <-
-  readRDS("urnrd_wells.rds") %>%
-  #--- project to UTM 14N WGS 84 ---#
-  st_transform(32614)
-
-tm_shape(urnrd_wells_sf) +
-  tm_symbols(col = "red", size = 0.1) +
-  tm_layout(frame = FALSE)
-
-#--- create a one-mile buffer around the wells ---#
-wells_buffer <- st_buffer(urnrd_wells_sf, dist = 1600)
-
-tm_shape(wells_buffer) +
-  tm_polygons(alpha = 0) +
-  tm_shape(urnrd_wells_sf) +
-  tm_symbols(col = "red", size = 0.1) +
-  tm_layout(frame = NA)
-
-##create buffer around polygon
-NE_counties <-
-  readRDS("NE_county_borders.rds") %>%
-  filter(NAME %in% c("Perkins", "Dundy", "Chase")) %>%
-  st_transform(32614)
-
-tm_shape(NE_counties) +
-  tm_polygons("NAME", palette = "RdYlGn", contrast = .3, title = "County") +
-  tm_layout(frame = NA)
-
-NE_buffer <- st_buffer(NE_counties, dist = 2000)
-
-tm_shape(NE_buffer) +
-  tm_polygons(col = "blue", alpha = 0.2) +
-  tm_shape(NE_counties) +
-  tm_polygons("NAME", palette = "RdYlGn", contrast = .3, title = "County") +
-  tm_layout(
-    legend.outside = TRUE,
-    frame = FALSE
-  )
 
 ##measure area
 #--- generate area by polygon ---#
