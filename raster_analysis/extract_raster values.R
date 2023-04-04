@@ -55,6 +55,24 @@ st_crs(state)
 state_n<- state%>%filter(STATEFP %in% c("17","18","19"))
 
 #extract raster value for polygon
-#poly_ras_val<- extract(t, state_n, fun = mean,na.rm = TRUE)
+#poly_ras_val<- extract(t, state_n, fun = mean,na.rm = TRUE, exact = TRUE)
 
 
+##or other way to extract 1st then apply function like mean/max
+
+#--- Kansas boundary (SpatVector) ---#
+#KS_county_sv <- vect(KS_county_sf)
+#--- extract values from the raster for each county ---#
+#tmax_by_county <- terra::extract(prism_tmax_0701_KS_sr, KS_county_sv)
+
+#--- get mean tmax ---#
+#mean_tmax <-t %>%group_by(ID) %>%summarize(tmax = mean(PRISM_tmax_stable_4kmD2_20180701_bil))
+
+(KS_county_sf <-
+    #--- back to sf ---#
+st_as_sf(KS_county_sv) %>%
+    #--- define ID ---#
+    mutate(ID := seq_len(nrow(.))) %>%
+    #--- merge by ID ---#
+    left_join(., mean_tmax, by = "ID")
+)
